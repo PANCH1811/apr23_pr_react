@@ -22,7 +22,7 @@ const products = productsFromServer.map((product) => {
 
 export const App = () => {
   const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const [searchValue, setSearchValue] = useState('');
 
   const handleUserFilter = (user) => {
@@ -37,11 +37,26 @@ export const App = () => {
     setSearchValue('');
   };
 
+  const handleCategoryFilter = (categoryId) => {
+    if (selectedCategories.includes(categoryId)) {
+      setSelectedCategories(
+        selectedCategories.filter(id => id !== categoryId),
+      );
+    } else {
+      setSelectedCategories([...selectedCategories, categoryId]);
+    }
+  };
+
+  const handleClearCategories = () => {
+    setSelectedCategories([]);
+  };
+
   const filteredProducts = products.filter((product) => {
     const matchUser
     = !selectedUser || product.owner.id === selectedUser.id;
     const matchCategory
-    = !selectedCategory || product.category.id === selectedCategory.id;
+    = selectedCategories.length === 0
+    || selectedCategories.includes(product.category.id);
     const matchSearch
     = product.name.toLowerCase().includes(searchValue.toLowerCase());
 
@@ -113,9 +128,10 @@ export const App = () => {
                 href="#/"
                 data-cy="AllCategories"
                 className={cn(
-                  'button mr-6', { 'is-outlined': !selectedCategory },
+                  'button mr-6',
+                  { 'is-outlined': selectedCategories.length === 0 },
                 )}
-                onClick={() => setSelectedCategory(null)}
+                onClick={handleClearCategories}
               >
                 All
               </a>
@@ -123,14 +139,13 @@ export const App = () => {
               {categoriesFromServer.map(cat => (
                 <a
                   data-cy="Category"
-                  className="button mr-2 my-1 is-info"
                   href="#/"
                   key={cat.id}
                   className={cn(
                     'button mr-2 my-1',
-                    { 'is-info': selectedCategory?.id === cat.id },
+                    { 'is-info': selectedCategories.includes(cat.id) },
                   )}
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() => handleCategoryFilter(cat.id)}
                 >
                   {cat.title}
                 </a>
@@ -143,18 +158,24 @@ export const App = () => {
                 data-cy="ResetAllButton"
                 href="#/"
                 className="button is-link is-outlined is-fullwidth"
+                onClick={() => {
+                  setSelectedUser(null);
+                  setSelectedCategories([]);
+                  setSearchValue('');
+                }}
               >
                 Reset all filters
               </a>
             </div>
+
           </nav>
         </div>
 
         <div className="box table-container">
           {filteredProducts.length === 0 ? (
-          <p data-cy="NoMatchingMessage" className="has-text-centered">
-            No products matching the current criteria
-          </p>
+            <p data-cy="NoMatchingMessage" className="has-text-centered">
+              No products matching the current criteria
+            </p>
           ) : (
             <table
               data-cy="ProductTable"
@@ -235,7 +256,7 @@ export const App = () => {
                       {product.owner.name}
                     </td>
                   </tr>
-                )) || 'No products matching selected criteria'}
+                ))}
               </tbody>
             </table>
           )}
